@@ -43,7 +43,8 @@ def get_data():
         'T1_mni':'t1_to_mni_warp.nii.gz',
         'T1_mni_warp':'t1_to_mni_warp.h5',
         'T2_reg2T1':'t2_reg2t1.nii.gz',
-        'func_reg_to_t1':'epi_to_t1_warped.nii.gz'}
+        'func_reg_to_t1':'epi_to_t1_warped.nii.gz',
+        'meanfunc_unwarped':'meanfunc_unwarped.nii.gz'}
 
     missing_processed_files=[]
 
