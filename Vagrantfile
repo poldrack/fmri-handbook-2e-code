@@ -43,7 +43,8 @@ tar \
 unzip \
 default-jre \
 eog \
-geany
+geany \
+imagemagick
 
 # install nipype dependencies
 $HOME/miniconda2/bin/conda update --yes conda
@@ -65,8 +66,9 @@ spyder \
 sympy
 $HOME/miniconda2/bin/pip install nibabel nilearn
 $HOME/miniconda2/bin/pip install nipy
-$HOME/miniconda2/bin/pip install --upgrade https://github.com/nipy/nipype/archive/master.zip
+$HOME/miniconda2/bin/pip install nipype
 $HOME/miniconda2/bin/pip install --process-dependency-links git+https://github.com/pymc-devs/pymc3
+$HOME/miniconda2/bin/pip install wand
 
 if [ ! -d $HOME/mcr ]
 then
