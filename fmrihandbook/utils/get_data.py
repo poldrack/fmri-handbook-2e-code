@@ -3,6 +3,7 @@ load data for fmri-handbook-2e notebooks
 """
 
 import os
+from fmrihandbook.utils.download_file import DownloadFile
 
 datadir=os.getenv('FMRIDATADIR')
 assert os.path.exists(datadir)
@@ -27,7 +28,8 @@ def get_data():
             data[k]=f
         else:
             print('getting %s'%base_files[k])
-
+            DownloadFile(os.path.join(urlbase,base_files[k]),
+	        os.path.join(datadir,base_files[k]))
             missing_base_files.append(base_files[k])
 
 
