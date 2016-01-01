@@ -18,7 +18,8 @@ def get_data():
         'func':'ds031/sub-01/ses-014/func/sub-01_ses-014_task-nback_run-001_bold.nii.gz',
         'sbref':'ds031/sub-01/ses-014/func/sub-01_ses-014_task-nback_run-001_sbref.nii.gz',
         'fieldmap-mag':'ds031/sub-01/ses-014/fmap/sub-01_ses-014_magnitude1.nii.gz',
-        'fieldmap-phasediff':'ds031/sub-01/ses-014/fmap/sub-01_ses-014_phasediff.nii.gz'}
+        'fieldmap-phasediff':'ds031/sub-01/ses-014/fmap/sub-01_ses-014_phasediff.nii.gz',
+        'groupfunc':'ds009/task002_cope001_go.nii.gz'}
 
     missing_base_files=[]
 
