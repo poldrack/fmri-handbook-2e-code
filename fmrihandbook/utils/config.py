@@ -16,7 +16,10 @@ class Config:
     else:
         print('using base dir:',datadir)
 
-    figuredir=os.path.join(os.path.dirname(datadir),'figures')
+    figuredir=os.getenv('FMRIFIGUREDIR')
+    if not figuredir:
+        figuredir=os.path.join(os.path.dirname(datadir),'figures')
+
     if not os.path.exists(figuredir):
         print('figure dir %s does not exist - creating it'%figuredir)
         os.mkdir(figuredir)
@@ -39,11 +42,11 @@ class Config:
     else:
         spmdir=os.getenv('SPMDIR')
         if not spmdir:
-            raise Exception('You need to set the environment variable SPMDIR')
-        
+	    spmdir=None
+            #raise Exception('You need to set the environment variable SPMDIR')
+
     def __init__(self):
         self.set_email(os.getenv('ENTREZEMAIL'))
-        
+
     def set_email(self,email):
         self.email=email
-        
