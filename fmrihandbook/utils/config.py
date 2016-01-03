@@ -26,7 +26,7 @@ class Config:
 
     datadict=os.path.join(datadir,'data_dictionary.pkl')
     try:
-        data=pickle.load(open(datadict))
+        data=pickle.load(open(datadict,'rb'))
     except:
         print('no data dictionary found, checking data')
         data=get_data()
@@ -42,8 +42,8 @@ class Config:
     else:
         spmdir=os.getenv('SPMDIR')
         if not spmdir:
-		spmdir=None
-		print('environment variable SPMDIR is not set - SPM functions will not work')
+            spmdir=None
+            print('environment variable SPMDIR is not set - SPM functions will not work')
             #raise Exception('You need to set the environment variable SPMDIR')
 
     def __init__(self):
