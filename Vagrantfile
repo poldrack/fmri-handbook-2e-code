@@ -44,7 +44,8 @@ unzip \
 default-jre \
 eog \
 geany \
-imagemagick
+imagemagick \
+spm8-data
 
 # install nipype dependencies
 $HOME/miniconda2/bin/conda update --yes conda
@@ -63,7 +64,12 @@ pandas \
 scikit-learn \
 seaborn \
 spyder \
-sympy
+sympy \
+simplejson \
+future \
+biopython \
+rpy2
+
 $HOME/miniconda2/bin/pip install nibabel nilearn
 $HOME/miniconda2/bin/pip install nipy
 $HOME/miniconda2/bin/pip install nipype
@@ -92,6 +98,8 @@ then
   wget --quiet http://www.fil.ion.ucl.ac.uk/spm/download/restricted/utopia/dev/spm12_r6472_Linux_R2015a.zip -O spm12.zip
   unzip spm12.zip
   echo 'alias spm="$HOME/spm12/run_spm12.sh $HOME/mcr/v85/"' >> .bashrc
+  echo 'export SPMDIR=/home/vagrant/spm12' >> .bashrc
+
   echo 'alias spm="$HOME/spm12/run_spm12.sh $HOME/mcr/v85/"' >> .env
   rm -rf spm12.zip
 fi
@@ -204,7 +212,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
    config.vm.provider :virtualbox do |vb|
       vb.customize ["modifyvm", :id, "--ioapic", "on"]
-      vb.customize ["modifyvm", :id, "--memory", "5120"]
+      vb.customize ["modifyvm", :id, "--memory", "6144"]
       vb.customize ["modifyvm", :id, "--cpus", "2"]
       vb.customize ["setextradata", :id, "GUI/MaxGuestResolution", "any"]
       vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
@@ -222,7 +230,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       end
   end
     # uncomment following line to allow syncing to local machine
-    #config.vm.synced_folder ".", "/vagrant"
+    config.vm.synced_folder ".", "/vagrant"
     config.vm.provision "shell", :privileged => false, inline: $script
 
 end
