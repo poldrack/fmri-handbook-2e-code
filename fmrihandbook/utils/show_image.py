@@ -20,8 +20,8 @@ def showPDF(infile,showLabel=True):
     else:
         input1 = PdfFileReader(open(infile,'rb'))
     img=IFrame(infile,
-           width=numpy.round(input1.getPage(0).mediaBox[2]*1.1).astype('int'),
-           height=numpy.round(input1.getPage(0).mediaBox[3]*1.2).astype('int'))
+           width=numpy.round(float(input1.getPage(0).mediaBox[2])*1.1).astype('int'),
+           height=numpy.round(float(input1.getPage(0).mediaBox[3])*1.2).astype('int'))
     IPython.display.display(img)
     try:
         os.remove(tmpfile.name)
