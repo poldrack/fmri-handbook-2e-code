@@ -24,7 +24,7 @@ def check_dependencies():
     # tested what the minimal versions that will work are
     needed_deps = ["IPython", "numpy", "scipy", "matplotlib",
                    "sklearn", "statsmodels", "networkx",
-                   "wand","pandas","nilearn","requests",
+                   "pandas","nilearn","requests",
 		                 "nibabel"]
     missing_deps = []
     for dep in needed_deps:
