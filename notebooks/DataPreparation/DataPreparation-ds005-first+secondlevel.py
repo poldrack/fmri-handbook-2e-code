@@ -20,6 +20,9 @@ rerun_analyses=False  # set to true to force rerun of everything
 
 config=Config()
 
+from run_shell_cmd import run_shell_cmd
+from mk_onsets_from_events import mk_onsets_from_events
+
 from nipype.interfaces import fsl, nipy, ants
 import nibabel
 import numpy
@@ -39,8 +42,10 @@ import nipype.interfaces.utility as niu
 from nipype.interfaces.c3 import C3dAffineTool
 from nipype.interfaces.utility import Merge, IdentityInterface
 
-config.data=get_data('ds005')
+config.data=get_data('ds005',save_datadict=False)
 print(config.data)
+
+subcodes=[subject_id]
 
 # Map field names to individual subject runs.
 info = dict(func=[['subject_id','subject_id','runcode']],
@@ -50,7 +55,7 @@ infosource = pe.Node(interface=niu.IdentityInterface(fields=['subject_id']), nam
 
 # this builds off of example at http://www.mit.edu/~satra/nipype-nightly/users/examples/fmri_ants_openfmri.html
 
-infosource.iterables = ('subject_id', [subject_id])
+infosource.iterables = ('subject_id', subcodes)
 
 runinfo = pe.Node(interface=niu.IdentityInterface(fields=['runcode']), name="runinfo")
 
@@ -375,7 +380,7 @@ do_qa=True
 if do_qa:
     fd={}
     dvars={}
-    for subcode in subcodes:
+    for subcode in [subject_id]:
         fd[subcode]={}
         dvars[subcode]={}
         for runcode in range(1,4):
@@ -444,7 +449,9 @@ def get_onsets(subject_id,runnum):
     from nipype.interfaces.base import Bunch
     import numpy
     import os,json
-
+    from run_shell_cmd import run_shell_cmd
+    from mk_onsets_from_events import mk_onsets_from_events
+    import glob
 
     config=Config()
 
@@ -469,19 +476,29 @@ def get_onsets(subject_id,runnum):
         regressors.append(td)
         regressor_names.append('disp%d'%int(i+1))
 
+    eventsfile=os.path.join(config.data['ds005']['datadir'],'%s/func/%s_task-mixedgamblestask_run-0%s_events.tsv'%(subject_id,subject_id,runnum))
+    assert os.path.exists(eventsfile)
+    onsetbase=os.path.join(config.data['ds005']['datadir'],'%s/func/onsets'%subject_id)
+    if not os.path.exists(onsetbase):
+        os.mkdir(onsetbase)
+    mk_onsets_from_events(eventsfile,onsetbase)
 
-    onsfile=os.path.join(config.data['ds005']['datadir'],'ds005_onsets.json')
-    with open(onsfile, 'r') as f:
-        ons = json.load(f)
-    conditions=['task','param-gain','param-loss','param-rt']
-    info=ons[subject_id]['run-0%s'%runnum]
     onsets=[]
     durations=[]
     amplitudes=[]
-    for c in conditions:
-        onsets.append(info[c]['onset'])
-        durations.append(info[c]['duration'])
-        amplitudes.append(info[c]['weight'])
+    conditions=[]
+    onsfiles=glob.glob(os.path.join(onsetbase,'*ons.txt'))
+    for f in onsfiles:
+        onsdata=numpy.loadtxt(f)
+        try:
+            onsets.append(onsdata[:,0])
+            durations.append(onsdata[:,1])
+            amplitudes.append(onsdata[:,2])
+            condname=os.path.basename(f).replace('_ons.txt','')
+            conditions.append(condname)
+        except:
+            pass
+
 
     info = [Bunch(conditions=conditions,
               onsets=onsets,
@@ -489,12 +506,16 @@ def get_onsets(subject_id,runnum):
                 amplitudes=amplitudes,
                  regressors=regressors,
                  regressor_names=regressor_names)]
+    print(info)
     return info
 
 getonsets = pe.Node(niu.Function(input_names=['subject_id','runnum'],
                 output_names=['info'],
                 function=get_onsets),
                 name='getonsets')
+
+
+
 
 firstlevel.connect(infosource,'subject_id',getonsets,'subject_id')
 firstlevel.connect(runinfo,'runcode',getonsets,'runnum')
@@ -509,18 +530,16 @@ specifymodel.inputs.high_pass_filter_cutoff = hpf_cutoff
 firstlevel.connect(getonsets,'info',specifymodel,'subject_info')
 firstlevel.connect(datasource_func,'func',specifymodel,'functional_runs')
 
-
-
 # In[ ]:
 
 contrasts=[['task>Baseline','T',
-            ['task'],[1]],
+            ['trial'],[1]],
            ['param-gain','T',
-            ['param-gain'],[1]],
+            ['paramgain'],[1]],
            ['param-loss-neg','T',
-            ['param-loss'],[-1]],
+            ['paramloss'],[-1]],
            ['param-rt','T',
-            ['param-rt'],[1]]]
+            ['paramrt'],[1]]]
 
 level1design = pe.Node(interface=fsl.model.Level1Design(),name='level1design')
 level1design.inputs.interscan_interval =2.0
@@ -529,8 +548,6 @@ level1design.inputs.model_serial_correlations=True
 level1design.inputs.contrasts=contrasts
 
 firstlevel.connect(specifymodel,'session_info',level1design,'session_info')
-
-
 
 
 # In[ ]:
@@ -555,7 +572,8 @@ firstlevel.connect(filmgls,'tstats',datasink,'filmgls.tstats')
 firstlevel.connect(filmgls,'zstats',datasink,'filmgls.zstats')
 
 
-firstlevel.run()
+firstlevel.run(plugin='MultiProc', plugin_args={'n_procs' : 16})
+
 
 
 # ## warp copes and varcopes to MNI space
@@ -669,7 +687,7 @@ secondlevel.connect(datasource_linearreg, 'matrix', warpstats_linear, 'in_matrix
 secondlevel.connect(warpstats_linear,'out_file',datasink,'affine.warped_stats')
 
 
-secondlevel.run()
+secondlevel.run(plugin='MultiProc', plugin_args={'n_procs' : 16})
 
 
 # ### Second level analysis - fixed effects across runs
@@ -748,4 +766,4 @@ fixed_fx.connect(flameo,'copes',datasink,'fixedfx.cope')
 fixed_fx.connect(flameo,'var_copes',datasink,'fixedfx.varcope')
 
 
-fixed_fx.run()
+fixed_fx.run(plugin='MultiProc', plugin_args={'n_procs' : 16})
