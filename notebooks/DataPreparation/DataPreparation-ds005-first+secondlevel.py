@@ -368,7 +368,7 @@ smooth.inputs.fwhm=6
 
 
 
-graph=preprocessing.run() #plugin='MultiProc', plugin_args={'n_procs' : 2})
+graph=preprocessing.run(plugin='MultiProc', plugin_args={'n_procs' : 16})
 
 
 
