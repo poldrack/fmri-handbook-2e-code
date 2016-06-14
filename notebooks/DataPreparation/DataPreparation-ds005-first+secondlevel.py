@@ -371,6 +371,36 @@ smooth.inputs.fwhm=6
 graph=preprocessing.run(plugin='MultiProc', plugin_args={'n_procs' : 16})
 
 
+do_qa=True
+if do_qa:
+    fd={}
+    dvars={}
+    for subcode in subcodes:
+        fd[subcode]={}
+        dvars[subcode]={}
+        for runcode in range(1,4):
+            motfile=os.path.join(config.data['ds005']['datadir'],
+                'derivatives/mcflirt/par/_runcode_%d/_subject_id_%s/%s_task-mixedgamblestask_run-%02d_bold_mcf.nii.gz.par'%(runcode,subcode,subcode,runcode))
+            outdir=os.path.dirname(motfile)
+            try:
+                fd[subcode][runcode]=numpy.loadtxt(os.path.join(outdir,'fd.txt'))
+                dvars[subcode][runcode]=numpy.loadtxt(os.path.join(outdir,'dvars.txt'))
+            except:
+                motiondata=numpy.loadtxt(motfile)
+                fd[subcode][runcode]=compute_fd(motiondata)
+                meanfile=os.path.join(config.data['ds005']['datadir'],
+                    'derivatives/betfunc/out_file/_runcode_%d/_subject_id_%s/%s_task-mixedgamblestask_run-%02d_bold_mcf_brain.nii.gz'%(runcode,subcode,subcode,runcode))
+                meandata=nibabel.load(meanfile)
+                mask=nibabel.load(os.path.join(config.data['ds005']['datadir'],
+                    'derivatives/betfunc/mask_file/_runcode_%d/_subject_id_%s/%s_task-mixedgamblestask_run-%02d_bold_mcf_brain_mask.nii.gz'%(runcode,subcode,subcode,runcode)))
+                masker=NiftiMasker(mask_img=mask)
+                maskdata=masker.fit_transform(meandata)
+                globalmean=numpy.mean(maskdata,0)
+                dvars[subcode][runcode]=compute_dvars(globalmean)
+                numpy.savetxt(os.path.join(outdir,'fd.txt'),fd[subcode][runcode])
+                numpy.savetxt(os.path.join(outdir,'dvars.txt'),dvars[subcode][runcode])
+
+
 
 
 # ## First-level modeling
