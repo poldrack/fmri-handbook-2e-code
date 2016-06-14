@@ -42,23 +42,22 @@ def get_data(dataset=None,save_datadict=True):
                 data['ds031'][k]=f
             else:
                 print('getting %s'%base_files[k])
-                DownloadFile(os.path.join(urlbase,base_files[k]),
-    	           os.path.join(datadir,base_files[k]))
-                missing_base_files.append(base_files[k])
+                if not os.path.exists(os.path.join(datadir,base_files[k])):
+                    DownloadFile(os.path.join(urlbase,base_files[k]),
+    	               os.path.join(datadir,base_files[k]))
                 data['ds031'][k]=f
     elif dataset=='ds005':
-        if not os.path.exists(os.path.join(datadir,'ds005')):
-            if not os.path.exists(os.path.join(datadir,'ds005_BIDS.tar')):
+        if not os.path.exists(os.path.join(datadir,'ds005_R2.0.0')):
+            if not os.path.exists(os.path.join(datadir,'ds005_BIDS.tgz')):
                 print('downloading ds005 from AWS...')
-                DownloadFile(os.path.join(urlbase,'tarballs/ds005_BIDS.tar'),
-                    os.path.join(datadir,'ds005_BIDS.tar'))
-        if not os.path.exists(os.path.join(datadir,'ds005/sub-01')):
-            print('extracting ds005_BIDS.tar')
-            tf=tarfile.open(os.path.join(datadir,'ds005_BIDS.tar'),'r')
+                DownloadFile(os.path.join(urlbase,'tarballs/ds005_R2.0.0.tgz'),
+                    os.path.join(datadir,'ds005_BIDS.tgz'))
+            print('extracting ds005_BIDS.tgz')
+            tf=tarfile.open(os.path.join(datadir,'ds005_BIDS.tgz'),'r:gz')
             tf.extractall(path=datadir)
         if not 'ds005' in data:
             data['ds005']={}
-        data['ds005']['datadir']=os.path.join(datadir,'ds005')
+        data['ds005']['datadir']=os.path.join(datadir,'ds005_R2.0.0')
 
     if save_datadict:
         pickle.dump(data,open(datadict,'wb'))
