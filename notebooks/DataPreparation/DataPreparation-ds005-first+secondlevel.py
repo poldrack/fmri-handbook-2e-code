@@ -15,6 +15,11 @@ except:
 
 from fmrihandbook.utils.config import Config
 
+do_preprocessing=False
+do_firstlevel=False
+do_secondlevel=False
+do_fixedfx=True
+
 verbose=True
 rerun_analyses=False  # set to true to force rerun of everything
 
@@ -372,8 +377,8 @@ smooth.inputs.fwhm=6
 #preprocessing.connect(smooth,'smoothed_file',datasink,'smooth')
 
 
-
-graph=preprocessing.run(plugin='MultiProc', plugin_args={'n_procs' : 16})
+if do_preprocessing:
+    graph=preprocessing.run(plugin='MultiProc', plugin_args={'n_procs' : 16})
 
 
 do_qa=True
@@ -572,7 +577,8 @@ firstlevel.connect(filmgls,'tstats',datasink,'filmgls.tstats')
 firstlevel.connect(filmgls,'zstats',datasink,'filmgls.zstats')
 
 
-firstlevel.run(plugin='MultiProc', plugin_args={'n_procs' : 16})
+if do_firstlevel:
+    graph=firstlevel.run(plugin='MultiProc', plugin_args={'n_procs' : 16})
 
 
 
@@ -687,7 +693,8 @@ secondlevel.connect(datasource_linearreg, 'matrix', warpstats_linear, 'in_matrix
 secondlevel.connect(warpstats_linear,'out_file',datasink,'affine.warped_stats')
 
 
-secondlevel.run(plugin='MultiProc', plugin_args={'n_procs' : 16})
+if do_secondlevel:
+    graph=secondlevel.run(plugin='MultiProc', plugin_args={'n_procs' : 16})
 
 
 # ### Second level analysis - fixed effects across runs
@@ -766,4 +773,5 @@ fixed_fx.connect(flameo,'copes',datasink,'fixedfx.cope')
 fixed_fx.connect(flameo,'var_copes',datasink,'fixedfx.varcope')
 
 
-fixed_fx.run(plugin='MultiProc', plugin_args={'n_procs' : 16})
+if do_fixedfx:
+    graph=fixed_fx.run() #plugin='MultiProc', plugin_args={'n_procs' : 16})
