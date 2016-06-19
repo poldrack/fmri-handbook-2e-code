@@ -7,7 +7,6 @@ import pandas,numpy
 import os
 
 
-
 def bids_to_3col(eventsfile,outdir,condition_columns,
     parametric_columns=[],parametric_columns_limiter=[],
    parametric_demean=True,parametric_std=False):
@@ -55,7 +54,10 @@ def bids_to_3col(eventsfile,outdir,condition_columns,
     for pr in parametric_columns:
             condevents=events.copy()
             # throw out any event that don't have a legit value
-            condevents=condevents[condevents[pr]!='n/a']
+            try:
+                condevents=condevents[condevents[pr]!='n/a']
+            except:
+                pass
             condevents[pr]=[float(i) for i in condevents[pr]]
             if parametric_demean:
                 condevents[pr]=condevents[pr] - condevents[pr].mean()
