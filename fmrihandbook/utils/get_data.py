@@ -58,6 +58,21 @@ def get_data(dataset=None,save_datadict=True):
         if not 'ds005' in data:
             data['ds005']={}
         data['ds005']['datadir']=os.path.join(datadir,'ds005_R2.0.0')
+    elif dataset=='ds009':
+        files_to_get=['ds009_R2.0.1_01-17.tgz','ds009_R2.0.1_18-29.tgz']
+
+        if not os.path.exists(os.path.join(datadir,'ds009_R2.0.1')):
+            for f in files_to_get:
+              if not os.path.exists(os.path.join(datadir,f)):
+                print('downloading %s from AWS...'%f)
+                DownloadFile(os.path.join(urlbase,'tarballs/%s'%f),
+                    os.path.join(datadir,f))
+                print('extracting %s'%f)
+                tf=tarfile.open(os.path.join(datadir,f),'r:gz')
+                tf.extractall(path=datadir)
+        if not 'ds009' in data:
+            data['ds009']={}
+        data['ds009']['datadir']=os.path.join(datadir,'ds009_R2.0.1')
 
     if save_datadict:
         pickle.dump(data,open(datadict,'wb'))
