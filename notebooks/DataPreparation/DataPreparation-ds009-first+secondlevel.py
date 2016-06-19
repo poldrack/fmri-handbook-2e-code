@@ -15,13 +15,14 @@ except:
 
 from fmrihandbook.utils.config import Config
 from fmrihandbook.utils.BIDSto3col import bids_to_3col
+from get_contrasts import get_contrasts
 
 use_multiproc=False
 
 do_preprocessing=False
 do_firstlevel=True
-do_secondlevel=False
-do_fixedfx=False
+do_secondlevel=True
+do_fixedfx=True
 
 verbose=True
 rerun_analyses=False  # set to true to force rerun of everything
@@ -565,17 +566,7 @@ firstlevel.connect(getonsets,'info',specifymodel,'subject_info')
 firstlevel.connect(datasource_func,'func',specifymodel,'functional_runs')
 
 # In[ ]:
-def get_contrasts(taskname):
-    contrasts={}
-    contrasts['stopsignal']=[['go>baseline','T',['go'],[1]],
-                         ['succstop>go','T',['succ_stop','go'],[1,-1]],
-                         ['unsucc>succstop','T',['unsucc_stop','succ_stop'],[1,-1]]]
-    contrasts['emotionalregulation']=[['average>baseline','T',['attend_neutral','attend_negative','suppress_negative'],[1,1,1]],
-                         ['attendneg>attendneutral','T',['attend_neutral','attend_negative'],[-1,1]],
-                         ['suppressneg>attendneg','T',['suppress_negative','attend_negative'],[1,-1]],
-                          ['rate>baseline','T',['rate'],[1]]]
 
-    return(contrasts[taskname])
 
 level1design = pe.Node(interface=fsl.model.Level1Design(),name='level1design')
 level1design.inputs.interscan_interval =2.0
@@ -628,8 +619,8 @@ datasource_stat = pe.Node(interface=nio.DataGrabber(infields=['subject_id','runc
                     name = 'datasource_stat')
 
 datasource_stat.inputs.base_directory = config.data['ds009']['datadir']
-datasource_stat.inputs.template = 'derivatives/filmgls/*copes/_runcode_%s/_subject_id_%s/*.nii.gz'
-datasource_stat.inputs.template_args = dict(stats=[['runcode','subject_id']])
+datasource_stat.inputs.template = 'derivatives/filmgls/*copes/_runcode_%s/_subject_id_%s/_taskname_%s/*.nii.gz'
+datasource_stat.inputs.template_args = dict(stats=[['runcode','subject_id','taskname']])
 datasource_stat.inputs.sort_filelist = True
 
 
@@ -638,8 +629,8 @@ datasource_bbrmat = pe.Node(interface=nio.DataGrabber(infields=['subject_id','ru
                     name = 'datasource_bbrmat')
 
 datasource_bbrmat.inputs.base_directory = config.data['ds009']['datadir']
-datasource_bbrmat.inputs.template = 'derivatives/bbr/out_matrix/_runcode_%s/_subject_id_%s/*.mat'
-datasource_bbrmat.inputs.template_args = dict(bbrmat=[['runcode','subject_id']])
+datasource_bbrmat.inputs.template = 'derivatives/bbr/out_matrix/_runcode_%s/_subject_id_%s/_taskname_%s/*.mat'
+datasource_bbrmat.inputs.template_args = dict(bbrmat=[['runcode','subject_id','taskname']])
 datasource_bbrmat.inputs.sort_filelist = True
 
 datasource_antsreg = pe.Node(interface=nio.DataGrabber(infields=['subject_id','runcode'],
@@ -683,7 +674,10 @@ secondlevel.connect(runinfo,'runcode',datasource_anat,'runcode')
 secondlevel.connect(runinfo,'runcode',datasource_antsreg,'runcode')
 secondlevel.connect(runinfo,'runcode',datasource_linearreg,'runcode')
 secondlevel.connect(runinfo,'runcode',datasource_func,'runcode')
+
 secondlevel.connect(taskinfo,'taskname',datasource_func,'taskname')
+secondlevel.connect(taskinfo,'taskname',datasource_bbrmat,'taskname')
+secondlevel.connect(taskinfo,'taskname',datasource_stat,'taskname')
 
 
 bbrstats=pe.MapNode(fsl.FLIRT(),name='bbrstats', iterfield=['in_file'])
@@ -749,22 +743,22 @@ regtypes = pe.Node(interface=niu.IdentityInterface(fields=['regtype']), name="re
 regtypes.iterables = ('regtype',['ants','affine'])
 
 
-datasource_cope = pe.Node(interface=nio.DataGrabber(infields=['subject_id','copenum','regtype'],
+datasource_cope = pe.Node(interface=nio.DataGrabber(infields=['subject_id','copenum','regtype','taskname'],
                     outfields=['copes']),
                     name = 'datasource_cope')
 
 datasource_cope.inputs.base_directory = config.data['ds009']['datadir']
-datasource_cope.inputs.template = 'derivatives/%s/warped_stats/_runcode_*/_subject_id_%s/_warpstats*/cope%d_*.nii.gz'
-datasource_cope.inputs.template_args = dict(copes=[['regtype','subject_id','copenum']])
+datasource_cope.inputs.template = 'derivatives/%s/warped_stats/_runcode_*/_subject_id_%s/_taskname_%s/_warpstats*/cope%d_*.nii.gz'
+datasource_cope.inputs.template_args = dict(copes=[['regtype','subject_id','taskname','copenum']])
 datasource_cope.inputs.sort_filelist = True
 
-datasource_varcope = pe.Node(interface=nio.DataGrabber(infields=['subject_id','copenum','regtype'],
+datasource_varcope = pe.Node(interface=nio.DataGrabber(infields=['subject_id','copenum','regtype','taskname'],
                     outfields=['varcopes']),
                     name = 'datasource_varcope')
 
 datasource_varcope.inputs.base_directory = config.data['ds009']['datadir']
-datasource_varcope.inputs.template = 'derivatives/%s/warped_stats/_runcode_*/_subject_id_%s/_warpstats*/varcope%d_*.nii.gz'
-datasource_varcope.inputs.template_args = dict(varcopes=[['regtype','subject_id','copenum']])
+datasource_varcope.inputs.template = 'derivatives/%s/warped_stats/_runcode_*/_subject_id_%s/_taskname_%s/_warpstats*/varcope%d_*.nii.gz'
+datasource_varcope.inputs.template_args = dict(varcopes=[['regtype','subject_id','taskname','copenum']])
 datasource_varcope.inputs.sort_filelist = True
 
 
@@ -774,6 +768,9 @@ fixed_fx.connect(copeinfo,'copenum',datasource_cope,'copenum')
 fixed_fx.connect(copeinfo,'copenum',datasource_varcope,'copenum')
 fixed_fx.connect(regtypes,'regtype',datasource_cope,'regtype')
 fixed_fx.connect(regtypes,'regtype',datasource_varcope,'regtype')
+fixed_fx.connect(taskinfo,'taskname',datasource_cope,'taskname')
+fixed_fx.connect(taskinfo,'taskname',datasource_varcope,'taskname')
+
 
 
 
@@ -790,7 +787,7 @@ fixed_fx.connect(datasource_varcope,'varcopes',varcopemerge,'in_files')
 
 level2model = pe.Node(interface=fsl.L2Model(),
                       name='l2model')
-level2model.inputs.num_copes=3
+level2model.inputs.num_copes=2
 
 
 flameo = pe.MapNode(interface=fsl.FLAMEO(run_mode='fe'), name="flameo",
@@ -801,6 +798,7 @@ flameo.inputs.mask_file=os.path.join(os.getenv('FSLDIR'),'data/standard/MNI152_T
 fixed_fx.connect(copemerge,'merged_file',flameo,'cope_file')
 fixed_fx.connect(varcopemerge,'merged_file',flameo,'var_cope_file')
 
+#fixed_fx.connect(taskinfo,('taskname',get_ncopes),level2model,'num_copes')
 fixed_fx.connect(level2model,'design_mat',flameo,'design_file')
 fixed_fx.connect(level2model,'design_con',flameo,'t_con_file')
 fixed_fx.connect(level2model,'design_grp',flameo,'cov_split_file')
