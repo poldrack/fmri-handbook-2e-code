@@ -1,2 +1,8 @@
+*.mat
+*.pdf
+*.nii.gz
+*.nii
 *.pyc
-
+.ipynb_checkpoints
+nipype_mem
+.DS_Store
