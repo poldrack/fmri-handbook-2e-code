@@ -9,3 +9,7 @@ def get_contrasts(taskname):
                           ['rate>baseline','T',['rate'],[1]]]
 
     return(contrasts[taskname])
+
+def get_ncopes(taskname):
+    from get_contrasts import get_contrasts
+    return(len(get_contrasts(taskname)))
