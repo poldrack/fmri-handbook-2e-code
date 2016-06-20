@@ -617,7 +617,7 @@ datasource_stat = pe.Node(interface=nio.DataGrabber(infields=['subject_id','runc
                     name = 'datasource_stat')
 
 datasource_stat.inputs.base_directory = config.data['ds009']['datadir']
-datasource_stat.inputs.template = 'derivatives/filmgls/copes/_runcode_%s/_subject_id_%s/_taskname_%s/*.nii.gz'
+datasource_stat.inputs.template = 'derivatives/filmgls/*copes/_runcode_%s/_subject_id_%s/_taskname_%s/*.nii.gz'
 datasource_stat.inputs.template_args = dict(stats=[['runcode','subject_id','taskname']])
 datasource_stat.inputs.sort_filelist = True
 
