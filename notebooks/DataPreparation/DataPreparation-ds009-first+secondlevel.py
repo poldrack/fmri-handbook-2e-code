@@ -15,7 +15,7 @@ except:
 
 from fmrihandbook.utils.config import Config
 from fmrihandbook.utils.BIDSto3col import bids_to_3col
-from get_contrasts import get_contrasts
+from get_contrasts import get_contrasts,get_ncopes
 
 use_multiproc=False
 
@@ -34,7 +34,6 @@ try:
 except:
     raise OSError('subject directory %s does not exist'%os.path.join(config.data['ds009']['datadir'],subject_id))
 
-from run_shell_cmd import run_shell_cmd
 from mk_onsets_from_events import mk_onsets_from_events
 
 from nipype.interfaces import fsl, nipy, ants
@@ -478,7 +477,6 @@ def get_onsets(subject_id,runnum,taskname):
     from nipype.interfaces.base import Bunch
     import numpy
     import os,json
-    from run_shell_cmd import run_shell_cmd
     from mk_onsets_from_events import mk_onsets_from_events
     import glob
 
@@ -619,7 +617,7 @@ datasource_stat = pe.Node(interface=nio.DataGrabber(infields=['subject_id','runc
                     name = 'datasource_stat')
 
 datasource_stat.inputs.base_directory = config.data['ds009']['datadir']
-datasource_stat.inputs.template = 'derivatives/filmgls/*copes/_runcode_%s/_subject_id_%s/_taskname_%s/*.nii.gz'
+datasource_stat.inputs.template = 'derivatives/filmgls/copes/_runcode_%s/_subject_id_%s/_taskname_%s/*.nii.gz'
 datasource_stat.inputs.template_args = dict(stats=[['runcode','subject_id','taskname']])
 datasource_stat.inputs.sort_filelist = True
 
@@ -734,9 +732,9 @@ if do_secondlevel:
 fixed_fx = pe.Workflow(name='fixedfx')
 fixed_fx.base_dir = workdir
 
-copeinfo = pe.Node(interface=niu.IdentityInterface(fields=['copenum']), name="copeinfo")
+#copeinfo = pe.Node(interface=niu.IdentityInterface(fields=['copenum']), name="copeinfo")
 
-copeinfo.iterables = ('copenum',[1,2,3,4])
+#copeinfo.iterables = ('copenum',[1,2,3,4])
 
 regtypes = pe.Node(interface=niu.IdentityInterface(fields=['regtype']), name="regtypes")
 
@@ -764,8 +762,8 @@ datasource_varcope.inputs.sort_filelist = True
 
 fixed_fx.connect(infosource,'subject_id',datasource_cope,'subject_id')
 fixed_fx.connect(infosource,'subject_id',datasource_varcope,'subject_id')
-fixed_fx.connect(copeinfo,'copenum',datasource_cope,'copenum')
-fixed_fx.connect(copeinfo,'copenum',datasource_varcope,'copenum')
+fixed_fx.connect(taskinfo,('taskname',get_ncopes),datasource_cope,'copenum')
+fixed_fx.connect(taskinfo,('taskname',get_ncopes),datasource_varcope,'copenum')
 fixed_fx.connect(regtypes,'regtype',datasource_cope,'regtype')
 fixed_fx.connect(regtypes,'regtype',datasource_varcope,'regtype')
 fixed_fx.connect(taskinfo,'taskname',datasource_cope,'taskname')
