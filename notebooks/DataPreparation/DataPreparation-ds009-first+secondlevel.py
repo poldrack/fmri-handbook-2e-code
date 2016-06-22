@@ -19,7 +19,8 @@ from get_contrasts import get_contrasts,get_ncopes
 
 use_multiproc=False
 
-do_preprocessing=False
+do_preprocessing=True
+do_qc=True
 do_firstlevel=True
 do_secondlevel=True
 do_fixedfx=True
@@ -49,6 +50,7 @@ from fmrihandbook.utils.get_data import get_data
 import nipype.interfaces.io as nio           # Data i/o
 import nipype.pipeline.engine as pe          # pypeline engine
 import nipype.algorithms.modelgen as model   # model specification
+from nipype.algorithms import misc as nam
 from nipype.interfaces.base import Bunch
 import glob
 import nipype.interfaces.utility as niu
@@ -396,54 +398,41 @@ if do_preprocessing:
     else:
         graph=preprocessing.run()
 
+# switch over to using mriqc
+from mriqc.interfaces import FunctionalQC,FramewiseDisplacement
 
-do_qa=True
-if do_qa:
-  fd={}
-  dvars={}
-  for task in ['stopsignal','emotionalregulation']:
-    fd[task]={}
-    dvars[task]={}
-    for subcode in [subject_id]:
-        fd[task][subcode]={}
-        dvars[task][subcode]={}
-        for runcode in range(1,3):
-            motfile=os.path.join(config.data['ds009']['datadir'],
-                'derivatives/mcflirt/par/_runcode_%d/_subject_id_%s/_taskname_%s/%s_task-%s_run-%02d_bold_mcf.nii.gz.par'%(runcode,subcode,task,subcode,task,runcode))
-            outdir=os.path.dirname(motfile)
-            try:
-                fd[task][subcode][runcode]=numpy.loadtxt(os.path.join(outdir,'fd.txt'))
-                dvars[task][subcode][runcode]=numpy.loadtxt(os.path.join(outdir,'dvars.txt'))
-            except:
-                motiondata=numpy.loadtxt(motfile)
-                fd[task][subcode][runcode]=compute_fd(motiondata)
-                meanfile=os.path.join(config.data['ds009']['datadir'],
-                    'derivatives/betfunc/out_file/_runcode_%d/_subject_id_%s/_taskname_%s/%s_task-%s_run-%02d_bold_mcf_brain.nii.gz'%(runcode,subcode,task,subcode,task,runcode))
-                meandata=nibabel.load(meanfile)
-                mask=nibabel.load(os.path.join(config.data['ds009']['datadir'],
-                    'derivatives/betfunc/mask_file/_runcode_%d/_subject_id_%s/_taskname_%s/%s_task-%s_run-%02d_bold_mcf_brain_mask.nii.gz'%(runcode,subcode,task,subcode,task,runcode)))
-                masker=NiftiMasker(mask_img=mask)
-                maskdata=masker.fit_transform(meandata)
-                globalmean=numpy.mean(maskdata,0)
-                dvars[task][subcode][runcode]=compute_dvars(globalmean)
-                numpy.savetxt(os.path.join(outdir,'fd.txt'),fd[task][subcode][runcode])
-                numpy.savetxt(os.path.join(outdir,'dvars.txt'),dvars[task][subcode][runcode])
+qc = pe.Workflow(name="qc")
+
+fqc=pe.Node(interface=FunctionalQC(),name='fqc')
+fd=pe.Node(interface=FramewiseDisplacement(),name='fd')
+
+tsnr = pe.Node(nam.TSNR(), name='compute_tsnr')
+
+qc.connect(mcflirt, 'out_file',tsnr,'in_file')
+
+qc.connect(datasource_func, 'func',fqc,'in_epi')
+qc.connect(mcflirt, 'out_file',fqc,'in_hmc')
+qc.connect(bet_func, 'mask_file',fqc,'in_mask')
+
+qc.connect(mcflirt, 'par_file',fd,'in_file')
+
+qc.connect(fqc,'dvars',datasink,'mriqc.dvars')
+qc.connect(fqc,'summary',datasink,'mriqc.summary')
+qc.connect(fd,'out_file',datasink,'mriqc.fd')
+qc.connect(tsnr,'tsnr_file',datasink,'mriqc.tsnr')
 
 
+if do_qc:
+    qc.run()
 
 
 # ## First-level modeling
 
-# In[ ]:
-
 firstlevel = pe.Workflow(name="firstlevel")
-
 
 firstlevel.base_dir = workdir
 
-
-
-datasource_func = pe.Node(interface=nio.DataGrabber(infields=['subject_id','runcode'],
+datasource_func = pe.Node(interface=nio.DataGrabber(infields=['subject_id','runcode','taskname'],
                     outfields=['func']),
                     name = 'datasource_func')
 
@@ -455,18 +444,12 @@ datasource_func.inputs.template_args = dict(func=[['runcode','subject_id','taskn
 
 datasource_func.inputs.sort_filelist = True
 
-
 firstlevel.connect(infosource,'subject_id',datasource_anat,'subject_id')
 firstlevel.connect(infosource,'subject_id',datasource_func,'subject_id')
 firstlevel.connect(runinfo,'runcode',datasource_func,'runcode')
-
-
 firstlevel.connect(taskinfo,'taskname',datasource_func,'taskname')
 
 
-
-
-# In[ ]:
 
 # creat a function that can read all of the onsets and motion files
 # and generate the appropriate structure
@@ -556,26 +539,20 @@ firstlevel.connect(taskinfo,'taskname',getonsets,'taskname')
 specifymodel=pe.Node(interface=model.SpecifyModel(),name='specifymodel')
 
 specifymodel.inputs.input_units = 'secs'
-#specifymodel.inputs.functional_runs = preprocessed_epi
 specifymodel.inputs.time_repetition = 2.0
 specifymodel.inputs.high_pass_filter_cutoff = hpf_cutoff
-#s.inputs.subject_info = info
 firstlevel.connect(getonsets,'info',specifymodel,'subject_info')
 firstlevel.connect(datasource_func,'func',specifymodel,'functional_runs')
-
-# In[ ]:
 
 
 level1design = pe.Node(interface=fsl.model.Level1Design(),name='level1design')
 level1design.inputs.interscan_interval =2.0
 level1design.inputs.bases = {'dgamma':{'derivs': True}}
 level1design.inputs.model_serial_correlations=True
-#level1design.inputs.contrasts=contrasts
 
 firstlevel.connect(specifymodel,'session_info',level1design,'session_info')
 firstlevel.connect(taskinfo,('taskname',get_contrasts),level1design,'contrasts')
 
-# In[ ]:
 
 modelgen = pe.Node(interface=fsl.model.FEATModel(),name='modelgen')
 firstlevel.connect(level1design,'fsf_files',modelgen,'fsf_file')
