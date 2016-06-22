@@ -17,13 +17,13 @@ from fmrihandbook.utils.config import Config
 from fmrihandbook.utils.BIDSto3col import bids_to_3col
 from get_contrasts import get_contrasts,get_ncopes
 
-use_multiproc=False
+use_multiproc=True
 
 do_preprocessing=True
 do_qc=True
-do_firstlevel=True
-do_secondlevel=True
-do_fixedfx=True
+do_firstlevel=False
+do_secondlevel=False
+do_fixedfx=False
 
 verbose=True
 rerun_analyses=False  # set to true to force rerun of everything
@@ -398,6 +398,8 @@ if do_preprocessing:
     else:
         graph=preprocessing.run()
 
+    preprocessing.write_graph(format='svg',simple_form=False)
+
 # switch over to using mriqc
 from mriqc.interfaces import FunctionalQC,FramewiseDisplacement
 
@@ -408,13 +410,17 @@ fd=pe.Node(interface=FramewiseDisplacement(),name='fd')
 
 tsnr = pe.Node(nam.TSNR(), name='compute_tsnr')
 
-qc.connect(mcflirt, 'out_file',tsnr,'in_file')
+#qc.connect(mcflirt, 'out_file',tsnr,'in_file')
 
 qc.connect(datasource_func, 'func',fqc,'in_epi')
-qc.connect(mcflirt, 'out_file',fqc,'in_hmc')
+#qc.connect(mcflirt, 'out_file',fqc,'in_hmc')
 qc.connect(bet_func, 'mask_file',fqc,'in_mask')
 
-qc.connect(mcflirt, 'par_file',fd,'in_file')
+#qc.connect(mcflirt, 'par_file',fd,'in_file')
+
+qc.connect(infosource,'subject_id',datasource_func,'subject_id')
+qc.connect(runinfo,'runcode',datasource_func,'runcode')
+qc.connect(taskinfo,'taskname',datasource_func,'taskname')
 
 qc.connect(fqc,'dvars',datasink,'mriqc.dvars')
 qc.connect(fqc,'summary',datasink,'mriqc.summary')
