@@ -56,7 +56,7 @@ import glob
 import nipype.interfaces.utility as niu
 from nipype.interfaces.c3 import C3dAffineTool
 from nipype.interfaces.utility import Merge, IdentityInterface
-from mriqc.interfaces import FunctionalQC,FramewiseDisplacement
+from mriqc.interfaces import FunctionalQC
 
 config.data=get_data('ds009',save_datadict=False)
 print(config.data)
@@ -393,7 +393,7 @@ smooth.inputs.fwhm=6
 #preprocessing.connect(smooth,'smoothed_file',datasink,'smooth')
 
 fqc=pe.Node(interface=FunctionalQC(),name='fqc')
-fd=pe.Node(interface=FramewiseDisplacement(),name='fd')
+
 tsnr = pe.Node(nam.TSNR(), name='compute_tsnr')
 
 preprocessing.connect(mcflirt, 'out_file',tsnr,'in_file')
@@ -401,16 +401,14 @@ preprocessing.connect(mcflirt, 'out_file',tsnr,'in_file')
 preprocessing.connect(datasource_func, 'func',fqc,'in_epi')
 preprocessing.connect(mcflirt, 'out_file',fqc,'in_hmc')
 preprocessing.connect(bet_func, 'mask_file',fqc,'in_mask')
+preprocessing.connect(tsnr, 'tsnr_file',fqc,'in_tsnr')
 
-preprocessing.connect(mcflirt, 'par_file',fd,'in_file')
+preprocessing.connect(mcflirt, 'par_file',fqc,'fd_movpar')
 
-preprocessing.connect(infosource,'subject_id',datasource_func,'subject_id')
-preprocessing.connect(runinfo,'runcode',datasource_func,'runcode')
-preprocessing.connect(taskinfo,'taskname',datasource_func,'taskname')
 
 preprocessing.connect(fqc,'dvars',datasink,'mriqc.dvars')
 preprocessing.connect(fqc,'summary',datasink,'mriqc.summary')
-preprocessing.connect(fd,'out_file',datasink,'mriqc.fd')
+preprocessing.connect(fqc,'fd_stats',datasink,'mriqc.fd')
 preprocessing.connect(tsnr,'tsnr_file',datasink,'mriqc.tsnr')
 
 
