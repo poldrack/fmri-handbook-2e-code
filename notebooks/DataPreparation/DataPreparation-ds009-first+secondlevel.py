@@ -56,6 +56,7 @@ import glob
 import nipype.interfaces.utility as niu
 from nipype.interfaces.c3 import C3dAffineTool
 from nipype.interfaces.utility import Merge, IdentityInterface
+from mriqc.interfaces import FunctionalQC,FramewiseDisplacement
 
 config.data=get_data('ds009',save_datadict=False)
 print(config.data)
@@ -391,6 +392,28 @@ smooth.inputs.fwhm=6
 #preprocessing.connect(rescale,'out_file',smooth,'in_file')
 #preprocessing.connect(smooth,'smoothed_file',datasink,'smooth')
 
+fqc=pe.Node(interface=FunctionalQC(),name='fqc')
+fd=pe.Node(interface=FramewiseDisplacement(),name='fd')
+tsnr = pe.Node(nam.TSNR(), name='compute_tsnr')
+
+preprocessing.connect(mcflirt, 'out_file',tsnr,'in_file')
+
+preprocessing.connect(datasource_func, 'func',fqc,'in_epi')
+preprocessing.connect(mcflirt, 'out_file',fqc,'in_hmc')
+preprocessing.connect(bet_func, 'mask_file',fqc,'in_mask')
+
+preprocessing.connect(mcflirt, 'par_file',fd,'in_file')
+
+preprocessing.connect(infosource,'subject_id',datasource_func,'subject_id')
+preprocessing.connect(runinfo,'runcode',datasource_func,'runcode')
+preprocessing.connect(taskinfo,'taskname',datasource_func,'taskname')
+
+preprocessing.connect(fqc,'dvars',datasink,'mriqc.dvars')
+preprocessing.connect(fqc,'summary',datasink,'mriqc.summary')
+preprocessing.connect(fd,'out_file',datasink,'mriqc.fd')
+preprocessing.connect(tsnr,'tsnr_file',datasink,'mriqc.tsnr')
+
+
 
 if do_preprocessing:
     if use_multiproc:
@@ -401,35 +424,7 @@ if do_preprocessing:
     preprocessing.write_graph(format='svg',simple_form=False)
 
 # switch over to using mriqc
-from mriqc.interfaces import FunctionalQC,FramewiseDisplacement
 
-qc = pe.Workflow(name="qc")
-
-fqc=pe.Node(interface=FunctionalQC(),name='fqc')
-fd=pe.Node(interface=FramewiseDisplacement(),name='fd')
-
-tsnr = pe.Node(nam.TSNR(), name='compute_tsnr')
-
-#qc.connect(mcflirt, 'out_file',tsnr,'in_file')
-
-qc.connect(datasource_func, 'func',fqc,'in_epi')
-#qc.connect(mcflirt, 'out_file',fqc,'in_hmc')
-qc.connect(bet_func, 'mask_file',fqc,'in_mask')
-
-#qc.connect(mcflirt, 'par_file',fd,'in_file')
-
-qc.connect(infosource,'subject_id',datasource_func,'subject_id')
-qc.connect(runinfo,'runcode',datasource_func,'runcode')
-qc.connect(taskinfo,'taskname',datasource_func,'taskname')
-
-qc.connect(fqc,'dvars',datasink,'mriqc.dvars')
-qc.connect(fqc,'summary',datasink,'mriqc.summary')
-qc.connect(fd,'out_file',datasink,'mriqc.fd')
-qc.connect(tsnr,'tsnr_file',datasink,'mriqc.tsnr')
-
-
-if do_qc:
-    qc.run()
 
 
 # ## First-level modeling
