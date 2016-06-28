@@ -407,9 +407,9 @@ preprocessing.connect(tsnr, 'tsnr_file',fqc,'in_tsnr')
 preprocessing.connect(mcflirt, 'par_file',fqc,'fd_movpar')
 
 
-#preprocessing.connect(fqc,'dvars',datasink,'mriqc.dvars')
+preprocessing.connect(fqc,'dvars',datasink,'mriqc.dvars')
 preprocessing.connect(fqc,'summary',datasink,'mriqc.summary')
-#preprocessing.connect(fqc,'fd_stats',datasink,'mriqc.fd')
+preprocessing.connect(fqc,'fd_stats',datasink,'mriqc.fd')
 preprocessing.connect(tsnr,'tsnr_file',datasink,'mriqc.tsnr')
 
 
