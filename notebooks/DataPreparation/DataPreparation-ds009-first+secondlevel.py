@@ -11,7 +11,8 @@ import json
 try:
     subject_id=sys.argv[1]
 except:
-    raise Exception('specify subject_id as an argument')
+    subject_id='sub-01'
+#    raise Exception('specify subject_id as an argument')
 
 from fmrihandbook.utils.config import Config
 from fmrihandbook.utils.BIDSto3col import bids_to_3col
@@ -398,7 +399,7 @@ tsnr = pe.Node(nam.TSNR(), name='compute_tsnr')
 
 preprocessing.connect(mcflirt, 'out_file',tsnr,'in_file')
 
-preprocessing.connect(datasource_func, 'func',fqc,'in_epi')
+preprocessing.connect(mcflirt,'mean_img',fqc,'in_epi')
 preprocessing.connect(mcflirt, 'out_file',fqc,'in_hmc')
 preprocessing.connect(bet_func, 'mask_file',fqc,'in_mask')
 preprocessing.connect(tsnr, 'tsnr_file',fqc,'in_tsnr')
@@ -406,9 +407,9 @@ preprocessing.connect(tsnr, 'tsnr_file',fqc,'in_tsnr')
 preprocessing.connect(mcflirt, 'par_file',fqc,'fd_movpar')
 
 
-preprocessing.connect(fqc,'dvars',datasink,'mriqc.dvars')
+#preprocessing.connect(fqc,'dvars',datasink,'mriqc.dvars')
 preprocessing.connect(fqc,'summary',datasink,'mriqc.summary')
-preprocessing.connect(fqc,'fd_stats',datasink,'mriqc.fd')
+#preprocessing.connect(fqc,'fd_stats',datasink,'mriqc.fd')
 preprocessing.connect(tsnr,'tsnr_file',datasink,'mriqc.tsnr')
 
 
