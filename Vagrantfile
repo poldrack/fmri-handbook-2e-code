@@ -4,15 +4,15 @@ VAGRANTFILE_API_VERSION = "2"
 
 $script = <<SCRIPT
 
-if [ ! -d $HOME/miniconda2 ]
+if [ ! -d $HOME/miniconda3 ]
 then
  # install anaconda
- wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+ wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
  chmod +x miniconda.sh
  ./miniconda.sh -b
  rm -rf miniconda.sh
- echo "export PATH=$HOME/miniconda2/bin:\\$PATH" >> .bashrc
- echo "export PATH=$HOME/miniconda2/bin:\\$PATH" >> .env
+ echo "export PATH=$HOME/miniconda3/bin:\\$PATH" >> .bashrc
+ echo "export PATH=$HOME/miniconda3/bin:\\$PATH" >> .env
 fi
 
 wget -O- http://neuro.debian.net/lists/trusty.us-nh.full | sudo tee /etc/apt/sources.list.d/neurodebian.sources.list
@@ -44,18 +44,20 @@ unzip \
 default-jre \
 eog \
 geany \
-imagemagick
+imagemagick 
+#spm8-data
 
 # install nipype dependencies
-$HOME/miniconda2/bin/conda update --yes conda
-$HOME/miniconda2/bin/conda install --yes pip \
+$HOME/miniconda3/bin/conda update --yes conda
+$HOME/miniconda3/bin/conda install --yes pip \
 numpy \
 scipy \
 nose \
 traits \
 networkx \
 dateutil \
-ipython-notebook \
+jupyter \
+ipython \
 matplotlib \
 statsmodels \
 boto \
@@ -63,12 +65,16 @@ pandas \
 scikit-learn \
 seaborn \
 spyder \
-sympy
-$HOME/miniconda2/bin/pip install nibabel nilearn
-$HOME/miniconda2/bin/pip install nipy
-$HOME/miniconda2/bin/pip install nipype
-$HOME/miniconda2/bin/pip install --process-dependency-links git+https://github.com/pymc-devs/pymc3
-$HOME/miniconda2/bin/pip install wand
+sympy \
+simplejson \
+future \
+biopython \
+rpy2
+
+$HOME/miniconda3/bin/pip install nibabel nilearn
+$HOME/miniconda3/bin/pip install nipy
+$HOME/miniconda3/bin/pip install nipype
+$HOME/miniconda3/bin/pip install --process-dependency-links git+https://github.com/pymc-devs/pymc3
 
 if [ ! -d $HOME/mcr ]
 then
@@ -92,6 +98,8 @@ then
   wget --quiet http://www.fil.ion.ucl.ac.uk/spm/download/restricted/utopia/dev/spm12_r6472_Linux_R2015a.zip -O spm12.zip
   unzip spm12.zip
   echo 'alias spm="$HOME/spm12/run_spm12.sh $HOME/mcr/v85/"' >> .bashrc
+  echo 'export SPMDIR=/home/vagrant/spm12' >> .bashrc
+
   echo 'alias spm="$HOME/spm12/run_spm12.sh $HOME/mcr/v85/"' >> .env
   rm -rf spm12.zip
 fi
@@ -168,7 +176,7 @@ then
 	git clone https://github.com/poldrack/fmri-handbook-2e-code.git
 fi
 
-$HOME/miniconda2/bin/python -c "from nilearn import datasets; datasets.fetch_haxby(n_subjects=1)"
+$HOME/miniconda3/bin/python -c "from nilearn import datasets; datasets.fetch_haxby(n_subjects=1)"
 
 if [ ! -d $HOME/data/ds031 ]
 then
@@ -204,7 +212,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
    config.vm.provider :virtualbox do |vb|
       vb.customize ["modifyvm", :id, "--ioapic", "on"]
-      vb.customize ["modifyvm", :id, "--memory", "5120"]
+      vb.customize ["modifyvm", :id, "--memory", "6144"]
       vb.customize ["modifyvm", :id, "--cpus", "2"]
       vb.customize ["setextradata", :id, "GUI/MaxGuestResolution", "any"]
       vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
@@ -222,7 +230,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       end
   end
     # uncomment following line to allow syncing to local machine
-    #config.vm.synced_folder ".", "/vagrant"
+    config.vm.synced_folder ".", "/vagrant"
     config.vm.provision "shell", :privileged => false, inline: $script
 
 end

@@ -12,7 +12,8 @@ class Config:
         raise Exception('You need to set the environment variable FMRIDATADIR')
 
     if not os.path.exists(datadir):
-        raise Exception('FMRIDATADIR must exist: %s'%datadir)
+        print('data dir %s does not exist - creating it'%datadir)
+        os.mkdir(datadir)
     else:
         print('using base dir:',datadir)
 
@@ -24,12 +25,7 @@ class Config:
         print('figure dir %s does not exist - creating it'%figuredir)
         os.mkdir(figuredir)
 
-    datadict=os.path.join(datadir,'data_dictionary.pkl')
-    try:
-        data=pickle.load(open(datadict))
-    except:
-        print('no data dictionary found, checking data')
-        data=get_data()
+    data=get_data()
 
     orig_figuredir='https://web.stanford.edu/group/poldracklab/fmri-handbook-2e-data/figures-1e/'
 
@@ -42,8 +38,8 @@ class Config:
     else:
         spmdir=os.getenv('SPMDIR')
         if not spmdir:
-		spmdir=None
-		print('environment variable SPMDIR is not set - SPM functions will not work')
+            spmdir=None
+            print('environment variable SPMDIR is not set - SPM functions will not work')
             #raise Exception('You need to set the environment variable SPMDIR')
 
     def __init__(self):
