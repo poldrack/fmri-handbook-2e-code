@@ -44,7 +44,7 @@ unzip \
 default-jre \
 eog \
 geany \
-imagemagick 
+imagemagick
 #spm8-data
 
 # install nipype dependencies
@@ -55,7 +55,6 @@ scipy \
 nose \
 traits \
 networkx \
-dateutil \
 jupyter \
 ipython \
 matplotlib \
@@ -95,7 +94,7 @@ fi
 if [ ! -d $HOME/spm12 ]
 then
   echo "downloading SPM..."
-  wget --quiet http://www.fil.ion.ucl.ac.uk/spm/download/restricted/utopia/dev/spm12_r6472_Linux_R2015a.zip -O spm12.zip
+  wget --quiet http://www.fil.ion.ucl.ac.uk/spm/download/restricted/utopia/dev/spm12_latest_BI_Linux_R2017b.zip -O spm12.zip
   unzip spm12.zip
   echo 'alias spm="$HOME/spm12/run_spm12.sh $HOME/mcr/v85/"' >> .bashrc
   echo 'export SPMDIR=/home/vagrant/spm12' >> .bashrc
@@ -107,7 +106,7 @@ fi
 if [ ! -d $HOME/ANTs.2.1.0.Debian-Ubuntu_X64 ]
 then
   echo "downloading ANTs"
-  wget --quiet https://github.com/stnava/ANTs/releases/download/v2.1.0/Linux_Ubuntu14.04.tar.bz2
+  wget --quiet https://github.com/ANTsX/ANTs/releases/download/v2.1.0/Linux_Ubuntu14.04.tar.bz2
   tar jxvf Linux_Ubuntu14.04.tar.bz2
   echo "export PATH=$HOME/ANTs.2.1.0.Debian-Ubuntu_X64:\\$PATH" >> .bashrc
   echo "export PATH=$HOME/ANTs.2.1.0.Debian-Ubuntu_X64:\\$PATH" >> .env
@@ -176,7 +175,7 @@ then
 	git clone https://github.com/poldrack/fmri-handbook-2e-code.git
 fi
 
-$HOME/miniconda3/bin/python -c "from nilearn import datasets; datasets.fetch_haxby(n_subjects=1)"
+$HOME/miniconda3/bin/python -c "from nilearn import datasets; datasets.fetch_haxby(subjects=1)"
 
 if [ ! -d $HOME/data/ds031 ]
 then
@@ -189,7 +188,7 @@ fi
 if [ ! -d $HOME/nilearn_data/haxby2001/subj1/blockmodel/stats ]
   then
   echo "getting Haxby statmaps"
-  wget --quiet https://www.dropbox.com/s/8tp4ev3xliy1lsx/blockmodel.tgz?dl=0 -O $HOME/data/haxby_stats.tgz -nv
+  wget --quiet https://www.dropbox.com/s/j6r3ogtaqfl37i0/blockmodel.tgz?dl=0 -O $HOME/data/haxby_stats.tgz -nv
   tar zxvf $HOME/data/haxby_stats.tgz -C $HOME/nilearn_data/haxby2001/subj1/
   rm -rf $HOME/data/haxby_stats.tgz
   fi
