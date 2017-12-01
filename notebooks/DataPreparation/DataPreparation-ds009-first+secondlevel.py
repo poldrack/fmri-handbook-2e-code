@@ -1,5 +1,5 @@
 
-# This code generates the processed data for dataset ds005,
+# This code generates the processed data for dataset ds009,
 # which is used in some of the chapter-specific notebooks from
 # Poldrack, Mumford, and Nichols' Handbook of fMRI Data Analysis
 # (2nd Edition).  This also provides an example of using the
